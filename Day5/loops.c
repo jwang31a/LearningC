@@ -72,4 +72,9 @@ exiting from loop:
       - only escapes 1 level of nesting
   - continue statement doesn't exit loop, instead transfers control to just before end of loop body
       - limited to use in loops
+
+if for loop contains continue, it can no longer be converted into a while statement using the common pattern
+for (;;) historically preferred for infinite loops due to efficiency
+  - modern compilers should have no difference
+goto statements are fine, but can lead to spaghetti code where control jumps
 */

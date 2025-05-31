@@ -22,7 +22,6 @@ int main(void) {
     }
     quicksort(a, N);
     printf("In sorted order: ");
-    // quicksortHelper(a, 0, N - 1);
     printArray(a);
     return 0;
 }

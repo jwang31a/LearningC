@@ -125,3 +125,4 @@
 
 * you know how recursion works with base cases and stuff and recursive stack
 * C allows recursion although it doesn't happen all that often
+* for some reason they decide to use quicksort as their example but it's probably cool for someone who's learning programming for the first time

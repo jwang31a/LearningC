@@ -108,3 +108,65 @@
 
 * when we call function and pass pointer to variable, assuption that function will modify variable
 * possibility that we peek at the value
+    * maybe the variable requires a large amount of storage, so we only pass the pointer to save time and space
+* const to document that function won't change object whose address passed to function
+    * ```C
+        void f(const int *p) {
+            *p = 0; //wrong
+        }
+        ```
+    * indication that p points to a constant integer
+
+## pointers as return values
+
+* ```C
+    int *max(int *a, int *b) {
+        if (*a > *b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
+    int i, j;
+    ...
+    int *p = max(&i, &j);
+    ```
+* can also return pointer to external variable or local static variable
+* however do not return pointer to automatic local variable
+    * ```C
+        int *f(void) {
+            int i;
+            ...
+            return &i;
+        }
+        ```
+    * this is wrong because i doesn't exist after f returns, so invalid pointer
+    * compilers may issue warning
+* pointers can also point to array elements
+    * if a is array, &a[i] is pointer to element i of a
+    * ```C
+        int *find_middle(int a[], int n) {
+            return &a[n / 2];
+        }
+        ```
+    * returns pointer to middle element of an array
+
+## extra notes
+
+* a pointer is not necessarily a memory address
+    * pointers to certain types may be stored differently due to unique properties of the type
+    * x86 "offsets" instead of complete addresses
+        * 16 bit offset or 32 bit segment:offset pairs (2 16 bit numbers)
+* ```C
+    int *p = &i;
+    ```
+    * the * specifies the type of p (pointer), not indirection operator
+* ```C
+    *p = &i;
+    ```
+    * here, we assign the value i's address to what p points to
+* display pointer using %p
+* ```C
+    void f(const int *p)
+    ```
+    * this means f can't modify the integer that p points to, but f can still change p (for example through reassignment)

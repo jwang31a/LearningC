@@ -113,3 +113,162 @@
     ```
 
 ## using array name as pointer
+
+* ```C
+    int a[10];
+    *a = 7; //stores 7 in a[0]
+    *(a + 1) = 12; //stores 12 in a[1]
+    ```
+* array subscripting is like pointer arithmetic
+* array names can also serve as a pointer
+* ```C
+    for (p = a; p < a + N; p++)
+        sum += *p;
+    ```
+    * however, we cannot assign new values through this, so this is wrong:
+    * ```C
+        while (*a != 0)
+            a++;
+        ```
+    * easy fix is:
+    * ```C
+        p = a;
+        while (*p != 0)
+            p++;
+        ```
+
+### array arguments revisited
+
+* when ordinary variable passed to function, value is copied so changes to the corresponding parameter don't affect variable
+* when array is passed, we don't copy the array, but we create a copy of the pointer (that still points to the first element in the array)
+    * that means the array is not protected against change
+    * use const to denote that
+    * this also does not affect time, since no copy of array is being made, just another pointer
+    * array parameter can be declared as pointer if necessary
+    * ```C
+        int find_largest(int *a, int n) {
+            ...
+        }
+        ```
+    * this is equivalent to declaring an array
+* we cannot treat pointer variables as arrays
+* we can use array arithmetic to slice arrays
+
+### pointers as array names
+
+* ```C
+    #define N 10
+    ...
+    int a[N], i, sum = 0, *p = a;
+    ...
+    for (i = 0; i < N; i++)
+        sum += p[i];
+    ```
+* p[i] is treated as *(p + i)
+
+## pointers and multidimensional arrays
+
+* pointers can also point to elements of multidimensional arrays
+
+### elements of multidimensional array
+
+* 2d arrays stored in row major order
+* nested for loop approach:
+* ```C
+    int a[NUM_ROWS][NUM_COLS];
+    int row, col;
+    ...
+    for (row = 0; row < NUM_ROWS; row++)
+        for (col = 0; col < NUM_COLS; col++)
+            a[row][col] = 0;
+    ```
+* but a 1d representation will also work
+* ```C
+    int *p;
+    ...
+    for (p = &a[0][0]; p <= &a[NUM_ROWS - 1][NUM_COLS - 1]; p++)
+        *p = 0;
+    ```
+    * each increment will go through a row column by column, then move to the next row once necessary
+* probably some speed benefit with older compilers, but at the cost of readability
+
+### processing rows of multidimensional array
+
+* to visit elements of row i:
+* `p = &a[i][0];` or `p = a[i];` for a pointer to the first element in row i
+* ```C
+    int a[NUM_ROWS][NUM_COLS], *p, i;
+    ...
+    for (p = a[i]; p < a[i] + NUM_COLS; p++)
+        *p = 0;
+    ```
+
+### processing columns of multidimensional array
+
+* columns are harder to deal with
+* ```C
+    int a[NUM_ROWS][NUM_COLS], (*p)[NUM_COLS], i;
+    ...
+    for (p = &a[0]; p < &a[NUM_ROWS]; p++)
+        (*p)[i] = 0;
+    ```
+    * parentheses around *p are necessary to have a pointer to an array rather than an array of pointers
+    * p++ advances to the next row
+
+### using name of multidimensional array as pointer
+
+* `int a[NUM_ROWS][NUM_COLS]`
+    * a is not a pointer to a[0][0], but instead points to a[0] (row 0)
+    * a has type int (*)[NUM_COLS] (pointer to integer array of length NUM_COLS)
+* instead of:
+    * ```C
+        for (p = &a[0]; p < &a[NUM_ROWS]; p++)
+            (*p)[i] = 0;
+        ```
+* simplify to:
+    * ```C
+        for (p = a; p < a + NUM_ROWS; p++)
+            (*p)[i] = 0;
+        ```
+* to trick compiler into thinking multidimensional array is one dimensional:
+    * ```C
+        largest = find_largest(a[0], NUM_ROWS * NUM_COLS);
+        ```
+    * a[0] points to element 0 in row 0 and has type int *, so no compiler objections
+
+## pointers and variable length arrays (c99)
+
+* pointers can point to elements of variable length arrays in c99
+* ```C
+    void f(int n) {
+        int a[n], *p;
+        p = a;
+        ...
+    }
+    ```
+* when vla has more than one dimension, type of pointer depends on length of each dimension except first
+* ```C
+    void f(int m, int n) {
+        int a[m][n], (*p)[n];
+        p = a;
+    }
+    ```
+    * p has a variably modified type since type of p depends on n
+    * validity of assignment `p = a` can't necessarily be determined by compiler
+* restriction of declaration of variably modified type inside body of function or function prototype
+* pointer arithmetic still works
+* ```C
+    int a[m][n];
+    int (*p)[n];
+    for (p = a; p < a + m; p++) {
+        (*p)[i] = 0;
+    }
+    ```
+
+## extra notes
+
+* p + j does not add j to address stored in p, but rather #of bytes of type p points to * j
+    * so if p is type int *, then p + j will add 4j to the address
+* apparently i[a] is the same as a[i] but this is terrible practice
+* style of declaring array parameter as *a or a[]
+    * probably depends on what we're using the array for inside the function

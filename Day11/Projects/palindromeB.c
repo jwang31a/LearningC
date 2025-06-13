@@ -4,20 +4,20 @@
 #define N 100
 
 /*
-mess of variables yippee
+okay i'm getting the hang of pointers gradually
+it's kinda cool to use
 */
 
 int main(void) {
-    char message[N], c;
-    int i = 0;
+    char message[N], c, *p = message;
     printf("Enter a message: ");
     while ((c = getchar()) != '\n') {
         if (isalpha(c)) {
-            message[i++] = tolower(c);
+            *p++ = tolower(c);
         }
     }
-    for (int j = i - 1, k = 0; j >= k; j--) {
-        if (message[j] != message[k++]) {
+    for (char *j = p - 1, *k = message; j >= k; j--) {
+        if (*j != *k++) {
             printf("Not a palindrome\n");
             return 0;
         }

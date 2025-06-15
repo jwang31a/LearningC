@@ -195,3 +195,284 @@
     ```
 
 ## accessing chars in string
+
+* subscripting works bc strings are arraysss
+* ```C
+    int count_spaces(const char s[]) {
+        int count = 0;
+        for (int i = 0; s[i] != '\0'; i++) {
+            if (s[i] == ' ') {
+                count++;
+            }
+        }
+        return count;
+    }
+    ```
+    * since s is a string, instead of passing the length of the array, we can check for the null character
+    * also we don't want to modify the string, so to ensure no changes happen, we use const
+* ```C
+    int count_spaces(const char *s) {
+        int count = 0;
+        for (; *s != '\0'; s++) {
+            if (*s == ' ') {
+                count++;
+            }
+        }
+        return count;
+    }
+    ```
+    * here, const prevents function from modify what s points to (the array)
+    * pointer arithmetic version is probably better for strings
+* can mix array operations and pointer operations, use whichever is more convenient (pointers preferred for strings)
+
+## C string library
+
+* default shallow copy
+* ```C
+    char str1[10], str2[10];
+    str1 = "abc"; //wrong, this does not put the string into the array
+    str2 = str1; //wrong, this does not copy
+    ```
+    * `char str[10] = "abc";` is allowed
+    * `if (str1 == str2) ...` compares the pointers, not the contents of the array (and since the arrays have different addresses, this is false)
+* `#include <string.h>` for string functions
+    * string parameters have type char *, so char arrays, variable of type char *, or string literal allowed
+    * some functions may not have const parameters, so string literals may not be suitable
+
+### strcpy
+
+* `char *strcpy(char *s1, const char *s2);`
+    * copies string s2 into s1 (all chars plus the first null char), returns s1
+    * ```C
+        strcpy(str2, "abcd"); //str2 contains "abcd"
+        strcpy(str1, str2); //str1 contains "abcd" as well
+        ```
+    * return value is usually discarded, but can be useful when chaining functions
+    * ```C
+        strcpy(str1, strcpy(str2, "abcd")); //str1 and str2 contain "abcd"
+        ```
+    * no way for strcpy to check that str2 will fit in str1
+* strncpy is safer: `strncpy(str1, str2, sizeof(str1))`
+    * but this doesn't copy the terminating character if str2's size is greater than or equal to size of str1
+    * ```C
+        strncpy(str1, str2, sizeof(str1) - 1);
+        str1[sizeof(str1) - 1] = '\0';
+        ```
+    * guarantees str1 is null terminated, even if strncpy doesn't copy null char
+
+### strlen
+
+* `size_t strlen(const char *s);`
+* size_t is a typedef, represing one of C's uint types, but can usually be treated as an int
+* ```C
+    int len;
+    len = strlen("abc"); //3
+    len = strlen(""); //0
+    strcpy(str1, "abc");
+    len = strlen(str1); //3
+    ```
+    * strlen doesn't measure the length of the array holding the string, but the length of the string stored
+
+### strcat
+
+* `char *strcat(char *s1, const char *s2);`
+* appends s2 to end of s1, returns s1
+* ```C
+    strcpy(str1, "abc");
+    strcat(str1, "def"); //str1 contains "abcdef"
+    ```
+* ```C
+    strcpy(str1, "abc");
+    strcpy(str2, "def");
+    strcat(str1, strcat(str2, "ghi")); //str1 contains "abcdefghi"
+    ```
+* undefined if str1 isn't long enough to contain additional characters from str2, may write past end of array
+* `strncat(str1, str2, sizeof(str1) - strlen(str1) - 1);`
+    * this makes sure that only the empty spaces in str1 get additional characters, except the last one which is reserved for the null char (auto terminates by strncat)
+
+### strcmp (string comparison)
+
+* `int strcmp(const char *s1, const char *s2);`
+    * compares s1 and s2, returning negative if s1 < s2, 0 if equal, or positive if s1 > s2
+    * lexicographic ordering
+    * A-z, a-z, 0-9 have consecutive codes
+    * uppercase are less than lowercase (uppercase 65-90, lowercase 97 - 122)
+    * digits less than letters (48 - 57)
+    * spaces less than all printing characters (value 32)
+
+## string idioms
+
+* cannot write function with the same name as a standard library function (all names beginning with str and lowercase letter are reserved to allow future functions to be added to string.h header)
+
+### searching for end of string
+
+* ```C
+    size_t strlen(const char *s) {
+        size_t n;
+        for (n = 0; *s != '\0'; s++) {
+            n++;
+        }
+        return n;
+    }
+    ```
+    * basic, but can be condensed
+* ```C
+    size_t strlen(const char *s) {
+        size_t n = 0;
+        while (*s++) { //because null char is 0, this will break when s points to a null char
+            n++;
+        }
+        return n;
+    }
+    ```
+    * condensed, but likely isn't actually faster
+* ```C
+    size_t strlen(const char *s) {
+        const char *p = s;
+        while (*s) {
+            s++;
+        }
+        return s - p;
+    }
+    ```
+    * computes the position of the null character and subtracts the position of first character (no need to increment n)
+* ```C
+    while (*s) {
+        s++;
+    }
+    ```
+    vs
+    `while (*s++);`:
+    * both search for the null character, but first one points s to null, while second one points s past null character
+    * okay supposedly they're slightly different but in my testing i'm not so sure
+
+### copying a string
+
+* ```C
+    char *strcat(char *s1, const char *s2) {
+        char *p = s1;
+        while (*p != '\0') { //locate end of s1
+            p++;
+        }
+        while (*s2 != '\0') {//append chars from s2 to end of s1
+            *p = *s2;
+            p++;
+            s2++;
+        }
+        *p = '\0';
+        return s1;
+    }
+    ```
+    * can be condensed
+* ```C
+    char *strcat(char *s1, const char *s2) {
+        char *p = s1;
+        while (*p) {
+            p++;
+        }
+        while (*p++ = *s2++); //main idiom, just ordinary assignment
+        return s1;
+    }
+    ```
+
+## arrays of strings
+
+* ```C
+    char planets[][8] = {
+        "Mercury", "Venus", "Earth", "Mars",
+        "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"
+    };
+    ```
+    * number of rows is implied and inferred by compiler, but the number of columns must be supplied
+    * in memory, this will look like a matrix of characters
+    * for shorter planet names, there will be a lot of empty characters after the name, leading to memory inefficiency
+* solution is ragged array, where rows can have different lengths, but C doesn't have one
+* ```C
+    char *planets[] = {
+        "Mercury", "Venus", "Earth", "Mars",
+        "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"
+    };
+    ```
+    * this simulates a ragged array by having an array of pointers that point to those strings
+
+### command line arguments
+
+* `ls` displays names of files, `ls -l` displays longer, detailed version, `ls -l file` displays detailed information about a file
+* we can obtain access to command line arguments (program parameters), define main
+* ```C
+    int main(int argc, char *argv[]) {
+        ...
+    }
+    ```
+    * argc is argument count, number of command line arguments (includes name of program)
+    * argv is argument vector, array of pointers to command line arguments stored in string form
+        * argv[0] is name of program, everything else is remaining command line arguents
+        * also has argv[argc], which is null pointer (points to nothing)
+        * macro NULL represents null pointer
+* `ls - l remind.c`: argc = 3
+    * argv[0] points to string containing program name, can be empty string if program name not available
+    * argv[1] points to "-l"
+    * argv[2] points to "remind.c"
+    * argv[3] null pointer
+* ```C
+    int i;
+    for (i = 1; i < argc; i++) {
+        printf("%s\n", argv[i]);
+    }
+    ```
+    * evaluates command line arguments, prints one per line
+* ```C
+    char **P;
+    for (p = &argv[1]; *p != NULL; p++) {
+        printf("%s\n", *p);
+    }
+    ```
+    * p is a pointer to a pointer to a character
+    * argv[1] is a pointer to a character, &argv[1] is a pointer to a pointer
+
+## q&a notes
+
+* string literals must be at least 509 chars long in C89, at least 4095 in C99
+* string literals are not necessarily constant, can be modified through pointers
+* something such as über cannot be written as \xfcber
+    * instead, create 2 string literals "\xfc" "ber" and let the compiler join them
+* compilers may store single copies of identical string literals, so modifying one will modify all copies of it
+    * string literals may also be read only
+* not all char arrays are strings, so not all char arrays should include null characters
+    * on the other hand, it's probably best for strings to have a null character
+* printf and scanf expect first argument to have type char *, so you can actually replace with string variable
+    * ```C
+        char fmt[] = "%d\n";
+        int i;
+        ...
+        printf(fmt, i);
+        ```
+* can do `printf(str);`, but if str contains % that's not good
+* ```C
+    int read_line(char str[], int n) {
+        int ch, i = 0;
+        while ((ch = getchar()) != '\n' && ch != EOF) {
+            if (i < n) {
+                str[i++] = ch;
+            }
+        }
+        str[i] = '\0'
+        return i;
+    }
+    ```
+    * this small modification to read_line detects whether getchar fails to read a character
+    * if getchar can't read a character, it returns EOF (end of file) of type int
+* traditional strcmp implementation
+    * ```C
+        int strcmp(char *s, char *t) {
+            int i;
+            for (i = 0; s[i] == t[i]; i++) {
+                if (s[i] == '\0') {
+                    return 0;
+                }
+            }
+            return s[i] - t[i];
+        }
+        ```
+    * return value is the difference between first mismatched characters
+* argv can be declared as **argv instead of *argv[], since *a is a[]

@@ -4,6 +4,11 @@
 
 #define NUM_PLANETS 9
 
+/*
+to ignore case when comparing strings, we have to write our own comparison function
+also allows us to figure out what we need to compare
+luckily it's easy to do
+*/
 int ignorecasecmp(char *i, char *j) {
     for (;; i++, j++) {
         int d = tolower(*i) - tolower(*j);

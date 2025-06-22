@@ -204,3 +204,51 @@
     * without parentheses, operator precedence may not happen as intended
 
 ### creating longer macros
+
+* `#define ECHO(s) (gets(s), puts(s))` lets us make replacement list a series of expressions
+* try to redefine as `#define ECHO(s) {gets(s); puts(s);}`
+    * but this is problematic:
+    * ```C
+        if (echo_flag)
+            ECHO(str);
+        else
+            gets(str);
+        ```
+    * ```C
+        if (echo_flag)
+            {gets(str); puts(str);};
+        else
+            gets(str);
+        ```
+    * the if statement is treated as a full if statement b/c of semicolon that follows (null statement)
+    * then the else is not attached to anything
+* comma operator solves problem when we need a series of expressions, but not with a series of statements
+    * workaround is a do while loop which will run exactly once (false condition)
+    * ```C
+        #define ECHO(s)      \
+                do {         \
+                    gets(s); \
+                    puts(s); \
+                } while (0)
+        ```
+    * then each call of ECHO must be followed with semicolon to complete the do statement
+
+### predefined macros
+
+* \_\_LINE\_\_: line number of file being compiled
+* \_\_FILE\_\_: name of file being compiled
+* \_\_DATE\_\_: date of compilation (mmm dd yyyy)
+* \_\_TIME\_\_: time of compilation (hh:mm:ss)
+* \_\_STDC\_\_: 1 of compiler conforms to C standard (C89 or C99)
+* date and time can be useful for distinguishing among different versions of the same program
+* line and file macros for locating errors
+    * ```C
+        #define CHECK_ZERO(divisor) \
+            if (divisor == 0) \
+                printf("*** Attempt to divide by zero on line %d " \
+                "of file %s ***\n", __LINE__, __FILE__)
+        
+        CHECK_ZERO(j);
+        k = i / j;
+        ```
+    * C library has macros named assert

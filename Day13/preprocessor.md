@@ -252,3 +252,253 @@
         k = i / j;
         ```
     * C library has macros named assert
+
+### additional C99 macros
+
+* \_\_STDC__HOSTED\_\_: 1 if hosted implementation, 0 if freestanding
+    * implementation of C consists of compiler plus software necessary to execute C programs
+    * hosted must accept any program that conforms to C99 standard
+    * freestanding doesn't have to compile programs that use complex types or standard headers beyond basic
+        * does not have to support stdio.h
+* \_\_STDC__VERSION\_\_: version of C standard supported (199409L for C89, 199901L for C99, different values for each amendment to standard)
+* \_\_STDC_IEC_559\_\_: 1 if IEC 60559 floating point arithmetic supported
+* \_\_STDC_IEC_559_COMPLEX\_\_: 1 if IEC 60559 complex arithmetic supported
+* \_\_STDC_ISO_10646\_\_: yyyymmL if wchar_t values match ISO 10646 standard of specified year and month
+
+### empty macro arguments
+
+* any or all arguments in macro call can be empty, but will contain same number of commas as in normal call
+* ```C
+    #define ADD(x, y) (x + y)
+    i = ADD(j, k); //becomes (j + k)
+    i = ADD(, k); //becomes (+ k)
+    ```
+* ```C
+    #define MK_STR(x) #x
+    char empty_string[] = MK_STR(); //becomes ""
+    ```
+* ```C
+    #define JOIN(x, y, z) x##y##z
+    ...
+    int JOIN(a, b, c), JOIN(a, b,), JOIN(a,,c), JOIN(,,c);
+    //becomes abc, ab, ac, c
+    ```
+    * missing arguments replaced with placemarker tokens which disappear
+
+### macros with variable number of arguments
+
+* macros can take unlimited number of arguments, like in functions
+* ```C
+    #define TEST(condition, ...) ((condition) ? \
+        printf("Passed test: %s\n", #condition): \
+        printf(__VA_ARGS__))
+    ```
+    * ... token (ellipsis) goes at end of parameter list, preceded by ordinary parameters
+    * \_\_VA_ARGS\_\_ is special identifier that can only appear in replacement list of macro with variable number of arguments
+        * represents all arguments that correspond to ellipsis
+        * at least one argument corresponds to ellipsis, empty argument allowed
+        * therefore TEST macro requires at least 2 arguments, one for condition, remaining match ellipsis
+* ```C
+    TEST(voltage <= max_voltage,
+        "Voltage %d exceeds %d\n", voltage, max_voltage);
+    ```
+* replaced with:
+* ```C
+    ((voltage <= max_voltage)?
+        printf("Passed test: %s\n", "voltage <= max_voltage"):
+        printf("Voltage %d exceeds %d\n", voltage, max_voltage));
+
+### \_\_func\_\_ identifier
+
+* \_\_func\_\_ isn't related to preprocessing, but useful for debugging
+* every function has access
+* behaves like string variable that stores name of currently executing function
+* sort of like if this were at beginning of function body:
+    * ```C
+        static const char __func__[] = "function-name";
+        ```
+    * ```C
+        #define FUNCTION_CALLED() printf("%s called\n", __func__)
+        #define FUNCTION_RETURNS() printf("%s returns\n", __func__)
+        //the textbook puts semicolons at the end of the macros but i don't think that's good practice is it?
+        void f(void) {
+            FUNCTION_CALLED(); //displays "f called"
+            ...
+            FUNCTION_RETURNS(); //displays "f returns"
+        }
+        ```
+
+## conditional compilation
+
+* conditonal compilation, inclusion or exclusion of section of program text depending on outcome of test performed by processor
+
+### #if and #endif directives
+
+* for example let's say we're using printf statements to debug, but the moment we're done debugging, we don't use the printf statements
+* ```C
+    #define DEBUG 1
+    ...
+    #if DEBUG
+    printf("Value of i: %d\n", i);
+    printf("Value of j: %d\n", j);
+    #endif
+    ```
+    * if will test value of DEBUG, since value isn't 0, preprocessor will leave the calls of printf
+    * but if value of DEBUG is 0, preprocessor will remove all four lines from program
+* #if constant-expression
+* #endif
+* undefined identifiers as macros have value 0, so if DEBUG is not defined, test will fail (no error), while `#if !DEBUG` will succeed
+
+### defined operator
+
+* defined operator produces value 1 if identifier is currently defined macro, 0 otherwise
+* ```C
+    #if defined(DEBUG)
+    ...
+    #endif
+    ```
+* ```C
+    #if defined DEBUG
+    ```
+
+### #ifdef and #ifndef directives
+
+* #ifdef tests whether identifier currently defined
+    * `#ifdef identifier` equivalent to `#if defined(identifier)`
+* #ifndef similar to #ifdef, but tests whether identifier is not defined as macro
+    * `#ifndef identifier` equivalent to `#if !defined(identifier)`
+
+### #elif and #else directives
+
+* `#elif constant-expression`
+* `#else`
+* ```C
+    #if expr1
+    ...
+    #elif expr2
+    ...
+    #else
+    ...
+    #endif
+    ```
+
+### uses of conditional compilation
+
+* common applications
+    * portable programs for several machines or operating systems
+        * macro for windows, macos, linux, with code specific for each os
+    * writing programs that can be compiled with different compilers using the \_\_STDC\_\_ macro
+        * ```C
+            #if __STDC__
+            function prototypes
+            #else
+            old-style function declarations
+            #endif
+            ```
+    * providing default definition for macro
+        * checks if a macro is defined, if not, define it
+        * ```C
+            #ifndef BUFFER_SIZE
+            #define BUFFER_SIZE 256
+            #endif
+            ```
+    * temporarily disabling code that contains comment
+        * can't use \/\*\*\/ to comment out code that already contains \/\*\*\/
+        * ```C
+            #if 0
+            lines containing comments
+            #endif
+            ```
+        * conditioning out
+
+## misc directives
+
+* error, line, pragma directives
+
+### #error directive
+
+* `#error message`, message is any sequence of tokens
+    * prints error message which includes message, exact form can vary from one compiler to another
+* encountering error directive indicates serious flaw, some compilers immediately terminate compilation without attempting to find other errors
+* used in conjunction to with conditional compilation to check for situations that shouldn't arise in normal compilation
+* for example if we want ints up to a certain type,
+    * ```C
+        #if INT_MAX < 100000
+        #error int type is too small
+        #endif
+        ```
+* ```C
+    #if defined(WIN32)
+    ...
+    #elif defined(MAC_OS)
+    ...
+    #elif defined(LINUX)
+    ...
+    #else
+    #error No operating system specified
+    #endif
+    ```
+
+### #line directive
+
+* `#line` used to alter the way program lines are numbered
+* `#line n`, n must be sequence of digits representing integer between 1 and 32767 (2147483647 C99)
+    * causes subsequent lines to be numbered n, n + 1, n + 2
+* `#line n "file"
+    * lines that follow assumed to come from file, with line numbers starting at n
+* changes value of \_\_LINE\_\_ macro
+* for example, `#line 10 "bar.c"` at beginning of foo.c
+    * if error on line 5 of foo.c, error message will refer to line 13 of bar.c
+    * this is super confusing wtf
+        * line 1 foo.c (directive)
+        * line 2 foo.c = line 10 bar.c
+        * line 3 foo.c = line 11 bar.c
+        * line 4 foo.c = line 12 bar.c
+        * line 5 foo.c = line 13 bar.c, this is where the line 13 comes from
+    * not very useful normally, although it can help with programs that generate C code as output
+
+### #pragma directive
+
+* requests special behavior from compiler, usually for unusually large programs or to use cpaabilites of compiler
+* `#pragma tokens`, tokens are arbitrary tokens
+    ```C
+        #pragma data(heap_size => 1000, stack_size => 2000)
+        ```
+* commands allowed depends on compiler
+* C99 STDC first token following `#pragma`
+    * FP_CONTRACT
+    * CX_LIMITED_RANGE
+    * FENV_ACCESS
+
+### _Pragma operator
+
+* C99 _Pragma operator, used with #pragma directive
+* `_Pragma (string-literal)`
+* preprocessor "destringizes" string literal
+* ```C
+    _Pragma("data(heap_size => 1000), stack_size => 2000")
+    ```
+* equivalent to
+* ```C
+    #pragma data(heap_size => 1000, stack_size => 2000)
+    ```
+* works around limitation of preprocessor: preprocessing directive can't generate another directive, but _Pragma is an operator
+* ```C
+    #define DO_PRAGMA(x) _Pragma(#x)
+    DO_PRAGMA(GCC dependency "parse.y") //outcome #pragma GCC dependency "parse.y"
+    ```
+
+## q&a
+
+* \# can be on a line by itself, called null directive
+* the # operator stringizes " to \" and \ to \\\
+* nested stringizes don't work normally
+    * ```C
+        #define CONCAT(x, y) x##y
+        CONCAT(a, CONCAT(b, c)) //yields aCONCAT(b, c)
+        ```
+* solution is to define a macro that calls the first
+    * ```C
+        #define CONCAT2(x, y) CONCAT(x, y)
+        CONCAT2(a, CONCAT2(b, c))
+        ```

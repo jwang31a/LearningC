@@ -15,6 +15,10 @@ int read_word(char *word, int len) {
         }
         ch = read_char();
     }
-    word[pos] = '\0'; //finishes the string with null character
+    if (pos > len) {
+        word[pos] = '*';
+    } else {
+        word[pos] = '\0'; //finishes the string with null character
+    }
     return pos;
 }

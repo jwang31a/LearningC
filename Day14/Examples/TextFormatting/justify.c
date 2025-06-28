@@ -18,9 +18,9 @@ int main(void) {
             flush_line();
             return 0;
         }
-        if (word_len > MAX_WORD_LEN) { //deals with words greater than 20 characters
-            word[MAX_WORD_LEN] = '*';
-        }
+        // if (word_len > MAX_WORD_LEN) { //deals with words greater than 20 characters
+        //     word[MAX_WORD_LEN] = '*';
+        // }
         if (word_len + 1 > space_remaining()) { //if not enough space, write what's already in the line
             write_line();
             clear_line();

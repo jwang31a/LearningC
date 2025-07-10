@@ -184,3 +184,38 @@
     * part2 is local to the function because it's not static
 
 ### c99 compound literals
+
+* can use compound literals to pass to function
+* `print_part((struct part) {528, "Disk drive", 10});`
+    * this creates a part structure containing information, which is then passed to the function
+* `part1 = (struct part) {528, "Disk drive", 10};`
+    * assigns compound literal to variable
+    * not a declaration containing initializer
+* compound literals contain type name in parentheses, followed by values inside braces
+    * type name can be preceded by struct, or typedef name
+    * compound literals may fail to provide full initialization, defaults to 0 for uninitialized members
+
+## nested arrays and structures
+
+* structs and arrays can be combined without restriction
+    * arrays can have structs as elements
+    * structs can contain arrays and other structures
+
+### nested structures
+
+* ```C
+    struct person_name {
+        char first[FIRST_NAME_LEN + 1];
+        char middle_initial;
+        char last[LAST_NAME_LEN + 1];
+    };
+    ```
+* this can then be used inside another structure
+* ```C
+    struct student {
+        struct person_name name;
+        int id, age;
+        char sex;
+    };
+    ```
+* 

@@ -218,4 +218,92 @@
         char sex;
     };
     ```
-* 
+    * allows us to treat names as units of data
+    * we can pass the structure name rather than the 3 components of a name
+    * also allows easier copying
+
+### arrays of structures
+
+* arrays can contain structures, acting as a simple database
+* `struct part inventory[100];` is like a database of 100 parts
+    * you know how accessing works
+
+### initializing array of structures
+
+* same as initializing multidimensional array
+* ```C  
+    struct dialing_code {
+        char *country;
+        int code;
+    };
+    ```
+    * reason why country is a pointer is because we don't want country to point to a string literal
+* ```C
+    const struct dialing_code country_codes[] =
+    {
+        {"Argentina", 54},
+        {"Bangladesh", 880},
+        {"Brazil", 55},
+        {"Burma (Myanmar)", 95},
+        {"China", 86},
+        {"Colombia", 57},
+        {"Congo, Dem. Rep. of", 243},
+        {"Egypt", 20},
+        {"Ethiopia", 251},
+        {"France", 33},
+        {"Germany", 49},
+        {"India", 91},
+        {"Indonesia", 62}, 
+        {"Iran", 98},
+        {"Italy", 39}, 
+        {"Japan", 81},
+        {"Mexico", 52}, 
+        {"Nigeria", 234},
+        {"Pakistan", 92}, 
+        {"Philippines", 63},
+        {"Poland", 48}, 
+        {"Russia", 7},
+        {"South Africa", 27}, 
+        {"South Korea", 82},
+        {"Spain", 34}, 
+        {"Sudan", 249},
+        {"Thailand", 66}, 
+        {"Turkey", 90},
+        {"Ukraine" 380}, 
+        {"United Kingdom", 44},
+        {"United States", 1}, 
+        {"Vietnam", 84}
+    };
+    ```
+    * c99 designated initializers allow item to have more than one designator
+    * ```C
+        struct part inventory[100] = {
+            [0].number = 528, [0].on_hand = 10, [0].name[0] = '\0';
+        }
+        ```
+    * selects array element 0 (part struct) and selects member within structure
+
+### maintaining parts database
+
+* operations supported:
+    * add new part number, name, initial quantity on hand
+        * error if part already in database or database full
+    * given part number, print name of part and current quantity on hand
+        * error if part number not in database
+    * given part number, change quantity on hand
+        * error if part number isn't in database
+    * print table showing all info in database
+        * displayed in order in which they were entered
+    * terminate program execution
+* codes supported:
+    * i (insert)
+    * s (search)
+    * u (update)
+    * p (print)
+    * q (quit)
+* limited size of database to 100 parts (inventory)
+    * num_parts keeps track of currently stored parts
+* program organization
+    * inventory.c
+    * readline.h
+    * readline.c

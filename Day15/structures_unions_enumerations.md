@@ -307,3 +307,16 @@
     * inventory.c
     * readline.h
     * readline.c
+
+## unions
+
+* union consists of one or more members, can be of different types
+    * but compiler only allocates enough space for the largest of the members, which overlay each other within this space
+    * assigning new value to one member alters values of other members as well
+* ```C
+    union {
+        int i;
+        double d;
+    } u;
+    ```
+    * members of structures are stored at different addresses in memory, while members of unions are stored at same address

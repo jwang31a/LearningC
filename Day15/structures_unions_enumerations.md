@@ -319,4 +319,85 @@
         double d;
     } u;
     ```
-    * members of structures are stored at different addresses in memory, while members of unions are stored at same address
+* members of structures are stored at different addresses in memory, while members of unions are stored at same address
+    * ![Structures vs. Unions in Memory](Images/structs_vs_unions.png "Structures and Unions in Memory")
+    * in a structure, members occupy different memory, while in a union, the members overlap (and have the same address)
+* accessing is the same as in a struct
+* unions are good for storing one member or another, not for storing both
+    * changing what's in a union will mess with how we see it with a different type
+* properties very similar to structs
+    * declare union tags and union types in the same way we declare structure tags and types
+    * can be copied using =, passed to functions, returned by functions
+* c89 initialization?
+    * ```C
+        union {
+            int i;
+            double d;
+        } u = {0};
+        ```
+* c99 rules
+    * designated initializers work with unions as well to specify which member we're initializing
+    * ```C
+        union {
+            int i;
+            double d;
+        } u = {.d = 10.0};
+        ```
+
+### applications of unions: using unions to save space
+
+* unions used to save space ink structures
+* example: structure containing info about item sold through gift catalog
+    * catalog carries books, mugs, shirts
+    * each item has stock number and price, and information depending on item type
+        * books: title, author, number of pages
+        * mugs: design
+        * shirts: design, colors available, sizes available
+* simple attempt for this structure:
+    * ```C
+        struct catalog_item {
+            int stock_number;
+            double price;
+            int item_type;
+            char title[TITLE_LEN + 1];
+            char author[AUTHOR_LEN + 1];
+            int num_pages;
+            char design[DESIGN_LEN + 1];
+            int colors;
+            int sizes;
+        };
+        ```
+    * item type stores value BOOK, MUG, or SHIRT
+    * colors, sizes would store encoded combinations of colors and sizes
+    * but this wastes space, since only some of the information is important to an item
+* using unions:
+    * ```C
+        struct catalog_item {
+            int stock_number;
+            double price;
+            int item_type;
+            union {
+                struct {
+                    char title[TITLE_LEN + 1];
+                    int num_pages;
+                } book;
+                struct {
+                    char design[DESIGN_LEN + 1];
+                } mug;
+                struct {
+                    char design[DESIGN_LEN + 1];
+                    int colors;
+                    int sizes;
+                } shirt;
+            } item;
+        }
+        ```
+    * main problem with this is that accessing is awkward:
+        * ```C
+            printf("%s", c.item.book.title);
+            ```
+    * this union contains 3 structures: two of which start with design
+        * if we change one's design, the other's design will also make be changed (and make sense)
+        * normally not a good idea to access data through a different member, but here it's fine
+
+### applications of unions: using unions to build mixed data structures

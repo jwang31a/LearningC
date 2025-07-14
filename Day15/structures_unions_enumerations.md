@@ -401,3 +401,126 @@
         * normally not a good idea to access data through a different member, but here it's fine
 
 ### applications of unions: using unions to build mixed data structures
+
+* unions allow us to create data structures that contain mixture of data of different types
+    * i.e. array whose elements are mixture of int and double values
+        * seems impossible since arrays store elements of one type
+    * ```C
+        typedef union {
+            int i;
+            double d;
+        } Number;
+        Number number_array[1000];
+        ```
+    * because this is an array of Numbers rather than ints or doubles, we can assign elements values of type int or double
+
+### adding tag field of union
+
+* unions have major problem: there's no easy way to tell which number of union was last changed, so there's no way to tell which member contains meaningful value
+* i.e. function to tell what value Number has:
+    * ```C
+        void print_number(Number n) {
+            if (n contains integer) {
+                printf("%d", n.i);
+            } else {
+                printf("%g", n.d);
+            }
+        }
+        ```
+    * but no way to tell whether n contains integer or floating point number
+* solution is to embed union within structure that includes "tag field" or "discriminant" which tells us what is stored
+    * ```C
+        #define INT_KIND 0
+        #define DOUBLE_KIND 1
+
+        typedef struct {
+            int kind; //tag field
+            union {
+                int i;
+                double d;
+            } u;
+        } Number;
+        ```
+    * Number contains kind and u, kind tells us what is actually stored
+    * each time we assign value to u, we also change kind
+    * ```C
+        n.kind = INT_KIND;
+        n.u.i = 82;
+
+        void print_number(Number n) {
+            if (n.kind == INT_KIND) {
+                printf("%d", n.u.i);
+            } else {
+                printf("%g", n.u.d);
+            }
+        }
+        ```
+
+## enumerations
+
+* sometimes we need values that have small set of meaningful values
+    * like boolean vlaues which can only be true or false
+    * or suits of a card which should only be "clubs", "diamonds", "hearts", or "spades"
+    * we could store values like this as codes (ints), but this can get hard to read
+    * we could also use macros to define a suit "type" and names for the suits which is better, but it may not be obvious that the macros are to be used for this type only
+* enumerated type: type whose values are listed ("enumerated") by programmer, who creates name (enumeration constant) for each value
+    * ```C
+        enum {CLUBS, DIAMONDS, HEARTS, SPADES} s1, s2;
+        ```
+    * enumeration constants similar to preprocessing #define directive constants, but enumeration constants are subject to C's scope rules
+        * if enum declared inside function, its constants won't be visible outside function
+
+### enumeration tags and type names
+
+* ```C
+    typedef enum {CLUBS, DIAMONDS, HEARTS, SPADES} Suit;
+    Suit s1, s2;
+    ```
+    * can be used in c89 to create basic boolean type, but not necessary in c99
+
+### enums as integers
+
+* C treats enum vars and constants as integers
+    * default assigns 0, 1, 2 to constants in enum
+    * i.e. CLUBS, DIAMONDS, HEARTS, SPADES assigned 0, 1, 2, 3 respectively
+* can also set different values for enums
+    * ```C
+        enum suit {CLUBS = 1, DIAMONDS = 2, HEARTS = 3, SPADES = 4};
+        ```
+    * numbers can be arbitrary, in no particular order
+    * two or more enumeration constants can have same value
+    * when no value specified, its value is 1 gerater than value of previous constant
+* since enum values are integers, we can mix with ordinary integers
+    * can result in nonsensical values being stored
+
+### using enums to declare "tag fields"
+
+* enums are perfect for tag fields
+* ```C
+    typedef struct {
+        enum {INT_KIND, DOUBLE_KIND} kind;
+        union {
+            int i;
+            double d;
+        } u;
+    } Number;
+    ```
+    * this does away with macros, and now kind only has two possible values
+    * used in the same way as the previous version of this
+
+## q&a
+
+* sizeof operator may return number greater than sizes of members combined together because compiler may leave gaps to align members
+* such holes can be between members or after last member, so it won't be at the beginning
+    * so, pointer to first member of structure is the same as a pointer to the entire structure (even though they won't have the same type)
+* the == operator doesn't test whether two structures are equal because it would be inconsistent with language's philosophy
+    * individually comparing structure members would also be inefficient
+    * comparing bypes is better, but with holes, comparison may not work
+    * overall, structure comparison is just difficult to make right
+* structure can have both tag and typedef name
+* to share structure type among several files, put declaration of structure tag or typedef in header file, then include header file whereever it's needed
+* (c89) structures defined in different files are compatible if members have same names and appear in same order, with corresponding members have compatible types
+    * c99 adds that both structure have same tag or neither has tag
+* pointers to compound literal are fine (and usually it's faster for functions to accept pointers rather than the whole struct)
+    * technically compound literals can also be changed (rare)
+* values of enumerated type can also be used as subscripts

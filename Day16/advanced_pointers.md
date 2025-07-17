@@ -168,3 +168,104 @@
     * when attempting to expand memory block, it will try to expand without moving data
         * although if unable to enlarge block, realloc will allocate new block elsewhere and copy contents
         * make sure to update all pointers to memory block because realloc may move block elsewhere
+
+## deallocating storage
+
+* memory allocation functions obtain memory from the heap
+    * calling them too foten can exhaust heap, causing null pointer returns
+* program may also allocate memory and lose track of them, wasting space (garbage and memory leak)
+    * ```C
+        p = malloc(...);
+        q = malloc(...);
+        p = q;
+        ```
+    * this creates a situation where p used to point to a memory block, but nothing points to it now
+    * some languages provide garbage collector to automatically locate and recycle garbage, but C doesn't have this
+    * must manually free memory (free function)
+
+### free function
+
+* \<stdlib.h\> prototype: `void free(void *ptr);`
+* just pass a pointer to a memory block we no longer need
+    * ```C
+        p = malloc(...);
+        q = malloc(...);
+        free(p);
+        p = q;
+        ```
+    * argument to free must be pointer returned by memory allocation function (or null pointer which has no effect)
+    * do not pass pointer to any other object
+
+### dangling pointer problem
+
+* free function leads to new problem: dangling pointers
+    * `free(p)` deallocates memory block that p points to, but doesn't change p itself
+    * further modifications of p will cause problems because the program no longer controls that memory
+    * multiple pointers may point to the same block, causing difficulties in spotting the issue
+
+## linked lists
+
+* dynamic storage allocation useful for linked data structures
+* linked lists yippee
+    * you know how they work mr. data structures and algorithms ta
+
+### declaring node type
+
+* we need a structure representing a single node in the list (assume that data type is integer)
+    * ```C
+        struct node {
+            int value; //data in node
+            struct node *next; //pointer to next node
+        };
+        ```
+    * when a structure has member that points to same kind of structure, we have to use a structure tag
+        * typedef does not work here
+* we need to keep track of where the list begins
+    * ```C
+        struct node *first = NULL;
+        ```
+    * this just means the list is empty initially
+
+### creating node
+
+* steps for creating a node:
+    1) allocate memory for node
+    2) store data in node
+    3) insert node into list
+* when creating new node, we need variable that points to node temporarily until insertion
+    * ```C
+        struct node *new_node;
+        new_node = malloc(sizeof(struct node));
+        ```
+    * now new_node points to block of memory just large enough to hold node structure
+    * make sure to get the size of the structure, not the pointer
+* next, we store data into new node
+    * ```C
+        (*new_node).value = 10;
+        ```
+    * so now the value has been set to 10, but next is still null
+
+### right arrow selection operator (->)
+
+* accessing member of structure using pointer is so common that we use the right arrow seledction operator ->
+    * ```C
+        new_node->value = 10;
+        ```
+    * this does the same thing as indirection then selection
+    * -> produces lvalue, so we can use it wherever ordinary variable would be allowed
+    * ```C
+        scanf("%d", &new_node->value);
+        ```
+    * the & operator is still necessary though because we want the address of this member, not the int value
+
+### inserting node at beginning of linked list
+
+* nodes can be added anywhere in a linked list easily
+* ```C
+    new_node->next first;
+    first = new_node;
+    ```
+    * both new_node and first are pointers
+    * new_node already has data, so we set it's next to first
+    * then we set set first to what new_node points to (they point to the same node now, the first node)
+    * any further adding like this will insert nodes before the old first

@@ -2,15 +2,15 @@
 #include "readline.h"
 
 #define NAME_LEN 25
-#define MAX_PARTS 100
 
 struct part {
     int number;
     char name[NAME_LEN + 1];
     int on_hand;
-} inventory[MAX_PARTS];
+    struct part *next;
+};
 
-int num_parts = 0;
+struct part *inventory = NULL;
 
 /*
 looks up part number in inventory array
@@ -18,66 +18,76 @@ returns array index if part number found
 -1 if not found
 */
 int find_part(int number) {
-    for (int i = 0; i < num_parts; i++) {
-        if (inventory[i].number == number) {
-            return i;
-        }
+    struct part *p;
+    for (p = inventory; p != NULL && number > p->number; p = p->next);
+    if (p != NULL && number == p->number) {
+        return p;
     }
-    return -1;
+    return NULL;
 }
 
 void insert(void) {
-    int part_number;
-    if (num_parts == MAX_PARTS) {
-        printf("Database is full; can't add more parts.\n");
+    struct part *cur, *prev, *new_node;
+    new_node = malloc(sizeof(struct part));
+    if (new_node == NULL) {
+        printf("Database is full; can't add more parts.\n"); //in case we can't find more memory for this node
         return;
     }
     printf("Enter part number: ");
-    scanf("%d", &part_number);
-    if (find_part(part_number) >= 0) {
+    scanf("%d", &new_node->number);
+    for (cur = inventory, prev = NULL; cur != NULL && new_node->number > cur->number; prev = cur, cur = cur->next);
+    if (cur != NULL && new_node->number == cur->number) { //if the part number already exists, then our new_node doesn't need to exist
         printf("Part already exists.\n");
+        free(new_node);
         return;
     }
-    inventory[num_parts].number = part_number;
     printf("Enter part name: ");
-    read_line(inventory[num_parts].name, NAME_LEN);
+    read_line(new_node->name, NAME_LEN);
     printf("Enter quantity on hand: ");
-    scanf("%d", &inventory[num_parts].on_hand);
-    num_parts++;
+    scanf("%d", &new_node->on_hand);
+    new_node->next = cur;
+    if (prev == NULL) { //insert at front
+        inventory = new_node;
+    } else { //insert in the rest of the list
+        prev->next = new_node;
+    }
 }
 
 void search(void) {
-    int i, number;
+    int number;
+    struct part *p;
     printf("Enter part number: ");
     scanf("%d", &number);
-    i = find_part(number);
-    if (i >= 0) {
-        printf("Part name: %s\n", inventory[i].name);
-        printf("Quantity on hand: %d\n", inventory[i].on_hand);
+    p = find_part(number);
+    if (p = NULL) {
+        printf("Part name: %s\n", p->name);
+        printf("Quantity on hand: %d\n", p->on_hand);
     } else {
         printf("Part not found.\n");
     }
 }
 
 void update(void) {
-    int i, number, change;
+    int number, change;
+    struct part *p;
     printf("Enter part number: ");
     scanf("%d", &number);
-    i = find_part(number);
-    if (i >= 0) {
+    p = find_part(number);
+    if (p != NULL) {
         printf("Enter change in quantity on hand: ");
         scanf("%d", &change);
-        inventory[i].on_hand += change;
+        p->on_hand += change;
     } else {
         printf("Part not found.\n");
     }
 }
 
 void print(void) {
+    struct part *p;
     printf("Part number   Part Name                  "
         "Quantity on Hand\n");
-    for (int i = 0; i < num_parts; i++) {
-        printf("%7d       %-25s%11d\n", inventory[i].number, inventory[i].name, inventory[i].on_hand);
+    for (p = inventory; p != NULL; p = p->next) {
+        printf("%7d       %-25s%11d\n", p->number, p->name, p->on_hand);
     }
 }
 

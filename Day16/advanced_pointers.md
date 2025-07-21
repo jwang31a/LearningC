@@ -269,3 +269,196 @@
     * new_node already has data, so we set it's next to first
     * then we set set first to what new_node points to (they point to the same node now, the first node)
     * any further adding like this will insert nodes before the old first
+* ```C
+    struct node *add_to_list(struct node *list, int n) {
+        struct node *new_node;
+        new_node = malloc(sizeof(struct node));
+        if (new_node == NULL) {
+            printf("Error: malloc failed in add_to_list\n");
+            exit(EXIT_FAILURE);
+        }
+        new_node->value = n;
+        new_node->next = list;
+        return new_node;
+    }
+    ```
+    * this does not modify the list pointer, it only returns a pointer to the new first node
+    * therefore, we need to store this pointer into first each time we call add_to_list
+    * ```C
+        first = add_to_list(first, 10);
+        first = add_to_list(first, 20);
+        ```
+* sample function using add_to_list function
+    * ```C
+        struct node *read_numbers(void) {
+            struct node *first = NULL;
+            int n;
+            printf("Enter a series of integers (0 to terminate): ");
+            for (;;) {
+                scanf("%d", &n);
+                if (n == 0) {
+                    return first;
+                }
+                first = add_to_list(first, n);
+            }
+        }
+        ```
+    * since singly linked lists are first in last out, the numbers will be in reverse order inside the list
+
+### searching linked list
+
+* idiom for searching:
+    * ```C
+        for (p = first; p != NULL; p = p->next) {
+            ...
+        }
+        ```
+* search list for integer n: if found, return pointer to node containing n, otherwise null pointer
+    * ```C
+        struct node *search_list(struct node *list, int n) {
+            struct node *p;
+            for (p = list; p != NULL; p = p->next) {
+                if (p->value == n) {
+                    return p;
+                }
+            }
+            return NULL;
+        }
+        ```
+* alternative search without a p, using list to keep track of the current node (because list is a copy of the original, we can change it safely)
+    * ```C=
+        struct node *search_list(struct node *list, int n) {
+            for (; list != NULL; list = list->next) {
+                if (list->value == n) {
+                    return list;
+                }
+            }
+            return NULL;
+        }
+        ```
+* even simpler is doing the comparison inside the loop test (although at this point it's getting difficult to read)
+    * ```C
+        struct node *search_list(struct node *list, int n) {
+            for (; list != NULL && list->value != n; list = list->next);
+            return list;
+        }
+        ```
+* this might be the most readable and simple version:
+    * ```C
+        struct node *search_list(struct node *list, int n) {
+            while (list != NULL & list-> value != n) {
+                list = list->next;
+            }
+            return list;
+        }
+        ```
+
+### deleting node from linked list
+
+* advantage of storing data in linked list is easy deletion of data (without shifting)
+    * all we need to do is locate node to be stored
+    * alter previous node so it bypasses deleted node
+    * (CRUCIAL) free the space occupied by deleted node
+* trailing pointer technique: have 2 pointers, one to current node, the other to the pointer right before it
+    * ```C
+        for (cur = list, prev = NULL; cur != NULL && cur->value != n; prev = cur; cur = cur->next);
+        ```
+    * if we reach a situation where cur's data is what we're looking for, we bypass it using the prev pointer
+    * then we have to free whatever we found
+    * ```C
+        struct node *delete_from_list(struct node *list, int n) {
+            struct node *cur, *prev;
+            for (cur = list, prev = NULL; cur != NULL && cur->value != n; prev = cur, cur = cur->next);
+            if (curr == NULL) {
+                return list;
+            }
+            if (prev = NULL) { //this block is 
+                list = list->next;
+            } else {
+                prev-> = cur->next;
+            }
+            free(cur);
+            return list;
+        }
+        ```
+* or the dsa way that i learned which uses 1 pointer only
+
+### ordered lists
+
+* when nodes of list are kept in order, sorted by data inside nodes, the list is ordered
+    * inserting node into ordered list is more difficult, but searching is fast and we can insert after we've found a good place for the node
+
+### maintaining parts database
+
+* revision of the parts database so that we store database inside a linked list instead of an array
+    * we don't have a preset limit on how many parts we can store
+    * and we can keep the database stored by part number using the properties of a linked list and nodes
+* part structure will be a linked node containing a pointer to the next node in the linked list
+    * inventory will be pointer to the first node in the list
+    * ```C
+        struct part {
+            int number;
+            char name[NAME_LEN + 1];
+            int on_hand;
+            struct part *next;
+        };
+        struct part *inventory = NULL; //points to first part, temporarily null
+        ```
+* find_part will be a linked list search, insert will contain a linked list search
+    * ```C
+        for (p = inventory; p != NULL && number > p->number; p = p->next);
+        ```
+    * this will look for the first node part number that is less than the one we are inserting
+    * if p becomes NULL in the case that we reach the end of the linked list, then we need to deal with that accordingly
+        * ```C
+            if (p != NULL && number == p->number) {
+                return p;
+            }
+            ```
+* insert will use a loop similar to the other loop:
+    * ```C
+        for (cur = inventory, prev = NULL; cur != NULL && new_node->number > cur-> member; prev = cur, cur = cur->next)
+        ```
+    * relies on 2 pointers like before
+    * after loop termination, inesrt will check whether cur isn't NULL and new_node->number equals cur->number
+        * if so, part is already in list (no insertion)
+        * otherwise, insert new node between prev and cur (this works for the end as well)
+
+## pointers to pointers
+
+* pointer to a pointer exists: for example in an earlier chapter, we had an array of char pointers, so a pointer to one of the array elements itself has a type char **
+* pointers to pointers are common in linked data structures
+    * when argument to function is pointer variable, we may want the function the modify variable by making it point somewhere else, which uses pointers to pointers
+* i.e we want to assign new_node to list instead of returning new_node in add_to_list
+    * ```C
+        struct node *add_to_list(struct node *list, int n) {
+            struct node *new_node;
+            new_node = malloc(sizeof(struct node));
+            if (new_node == NULL) {
+                printf("Error: malloc failed in add_to_list\n");
+                exit(EXIT_FAILURE);
+            }
+            new_node->value = n;
+            new_node->next = list;
+            return new_node;
+        }
+        ```
+    * suppose we modify function so that it assigns new_node to list instead of returning new_node
+        * `list = new_node;`
+    * because pointers are passed by value, not reference, changing what list is doesn't actually change what first points to outside of this function
+* instead, we need a pointer to a pointer: in this case, passing add_to_list a pointer to first
+    * ```C
+        void add_to_list(struct node **list, int n) {
+            struct node *new_node;
+            new_node = malloc(sizeof(struct node));
+            if (new_node == NULL) {
+                printf("Error: malloc failed in add_to_list\n");
+                exit(EXIT_FAILURE);
+            }
+            new_node->value = n;
+            new_node->next = *list;
+            *list = new_node;
+        }
+        ```
+    * so, when we call this version of add_to_list, the first argument is the address of first
+        * `add_to_list(&first, 10);`

@@ -462,3 +462,87 @@
         ```
     * so, when we call this version of add_to_list, the first argument is the address of first
         * `add_to_list(&first, 10);`
+        * assigning new_node to *list will modify first because first points to a pointer that points to the first node
+        * *list is used as an alias for first
+
+## pointers to functions
+
+* pointers can point to data, like variables, array elements, dynamically allocated blocks of memory
+* pointers in C can also point to functions because functions also occupy memory locations and have addresses
+
+### function pointers as arguments
+
+* for example we want to write an integrate function that integrates a mathematical function
+    * to generalize the integrate function as much as possible, so we'd like to pass a function f to integrate
+    * prototype `double integrate(double (*f)(double), double a, double b);`
+    * (*f) means f is a pointer to a function, not a function that returns pointer
+    * can also declare as `double integrate(double f(double), double a, double b);`
+    * example call: `result = integrate(sin, 0.0, PI / 2);`
+        * here, when the function name isn't followed by parentheses, C compiler produces pointer to function
+        * we are not calling sin, we are passing a pointer to sin
+    * within integrate, we call function that f points to using `y = (*f)(x);`
+        * technically we can do `f(x)` as well, but that obscures the fact that f is a pointer to a function
+
+### qsort function
+
+* qsort function can sort any array, based on criteria we choose
+    * since it can contain things like unions or structures, we need to define a function to determine which of two elements is smaller
+    * we need a comparison function: when given two pointers p and q to array elements, function must return integer that is negative if *p is less than *q, 0 if equal, positive if *p greater than *q
+    * pretty much the compareTo function from java
+* ```C
+    void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));
+    ```
+    * base points to first element in array (can point to an unsorted portion if some of the array is sorted)
+        * can just be the name of the array
+    * nmemb is the number of elements to be sorted (not necessarily number of elements in array)
+    * size is the size of each array element in bytes
+    * compar is a pointer to the commparison function
+    * qsort sorts array in ascending order, using the comparison function whenever it needs
+* to sort inventory array in earlier section, call:
+    * `qsort(inventory, num_parts, sizeof(struct part), compare_parts);`
+    * num_parts is only the number of parts actually inserted, not the maximum number of parts the array can hold
+* comparison function:
+    * qsort requires parameter has type void *, but we can't access members of part structure through void * pointer
+    * comparison function must assign parameters p and q to variables of type struct part * to convert types
+    * ```C
+        int compare_parts(const void *p, const void *q) {
+            const struct part *p1 = p;
+            const struct part *q1 = q;
+            if (p1->number < q1->number) {
+                return -1;
+            } else if (p1->number == q1->number) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+        ```
+    * const is necessary to avoid warning, also we don't want to modify whatever the pointers point to
+    * ```C
+        int compare_parts(*const void *p, const void *q) {
+            if (((struct part *) p)->number < ((struct part *) q)->number) {
+                return -1;
+            } else if (((struct part *) p)->number == ((struct part *) q)->number) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+        ```
+    * parentheses around ((struct part *) p) are necessary because we need to cast p to the right type and then get number from it
+    * can be even more consise:
+    * ```C
+        int compare_parts(const void *p, const void *q) {
+            return ((struct part *) p)->number - ((struct part *) q)->number;
+        }
+        ```
+    * subtracting two integers can be dangerous because of overflow, but part numbers are assumed to be positive
+* to compare using part name instead of part number, we could write a different version of the comparison function:
+    * ```C
+        int compare_parts(const void *p, const void *q) {
+            return strcmp(((struct part *) p)->name, ((struct part *) q)->name);
+        }
+        ```
+    * strcmp also returns a negative, 0, or positive result
+
+### other uses of function pointers

@@ -546,3 +546,18 @@
     * strcmp also returns a negative, 0, or positive result
 
 ### other uses of function pointers
+
+* pointers to functions are just like pointers to data, so we can store function pointers in variables or use them as elements of an array or members of a struct or union
+* `void (*pf)(int);`
+    * pf points to any function with an int parameter and return type of void
+    * if `f` is a function, `pf` can point to `f` by: `pf = f;`
+    * no need for `&` before `f`
+    * to call `f` using `pf`, do `(*pf)(i);` or `pf(i);`
+* arrays with function pointer elements are surprisingly useful
+    * for example, we can store all possible commands for a program in an array and subscript as needed to run the right function
+    * similarly, we could use a switch statement, but function pointer elements allow more flexibility
+        * elements can be changed during execution
+
+### tabulating the trigonometric functions (program)
+
+* 

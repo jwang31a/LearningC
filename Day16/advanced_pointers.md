@@ -560,4 +560,76 @@
 
 ### tabulating the trigonometric functions (program)
 
-* 
+* program to print table showing values of trig functions (from `<math.h>`)
+* function tabulate which prints table showing values of function pointer `f`
+* to use the `<math.h>` header, make sure to link in compilation by appending `-lm`
+
+## restricted pointers (C99)
+
+* advanced uses, not applicable to most people
+* keyword restrict: `int * restrict p;`
+    * this is a restricted pointer, which means that if p points to an object that is later modified, then that object is not accessed in any other way than through p
+    * the only way to get what p points to is through this restricted pointer
+    * (no aliasing)
+* example:
+    * ```C
+        int * restrict p;
+        int * restrict q;
+        p = malloc(sizeof(int));
+        q = p;
+        *q = 0; //undefined behavior
+        ```
+    * p is restricted
+* i'm skipping this part bruh
+
+## flexible array members (c99)
+
+* we may need to define a structure that contains an array of unknown size
+    * like when we want to store strings differently from the usual one
+        * like instead of a null character, we store length of string along with string's characters
+        * ```C
+            struct vstring {
+                int len;
+                char chars[N];
+            };
+            ```
+        * N is macro that represents maximum length of string, but this is bad since we limit string length and waste memory
+    * C workarounds: temporarily set chars length to 1, then dynamically allocate strings
+        * ```C
+            struct vstring {
+                int len;
+                char chars[1];
+            };
+            ...
+            struct vstring *str = malloc(sizeof(struct vstring) + n - 1);
+            str->len = n;
+            ```
+        * "struct hack": allocate more memory thn the structure is declared to have, then using memory to store additional elements of chars array
+        * gcc allows arrays to have length 0, which makes this trick work more explicit
+* flexible array member to do the struct hack
+    * when last member of structure is array, length may be omitted
+    * ```C
+        struct vstring {
+            int len;
+            char chars[]; //flexible array member
+        };
+        ...
+        struct vstring *str = malloc(sizeof(struct vstring) + n);
+        str->len = n;
+        ```
+    * sizeof operator ignores the chars array, it takes up 0 space in the structure
+    * any additional space we need for the chars array is explicitly added through adding to the malloc
+* special rules:
+    * flexible array member must appear last
+    * structure must have at least another member
+    * copying struct that contains flexible array member will copy other members but not flexible array itself
+* struct that contains flexible array member is incomplete type: missing part of information needed to determine how much memory it requires
+    * cannot be part of another structure or element of array
+    * but arrays can contain pointers to structures
+
+## q&a
+
+* NULL macro stands for 0, there for avoiding confusion
+* sometimes NULL's 0 is casted to void*
+* sometimes NULL is represented using a nonexistent memory address, hardware detectable
+* NULL is not a null character and should only be used for pointers
